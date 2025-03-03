@@ -1,21 +1,16 @@
 #pragma once
 
-#include <atomic>
+#include <array>
 #include <queue>
-#include <random>
 
 #include "Order.hpp"
-
-constexpr int MAX_LEVEL = 16;
-
 struct SkipListNode {
+    static constexpr int MAX_LEVEL = 16;
     double price;
     std::queue<Order> orders;
-    std::atomic<SkipListNode*> next[MAX_LEVEL];
+    std::array<SkipListNode*, MAX_LEVEL> next;
 
-    SkipListNode(double p) : price(p) {
-        for (int i = 0; i < MAX_LEVEL; i++) {
-            next[i].store(nullptr);
-        }
+    SkipListNode(double price) : price(price) {
+        next.fill(nullptr);  // Initialize all levels to nullptr
     }
 };

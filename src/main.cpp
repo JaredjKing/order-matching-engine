@@ -1,9 +1,9 @@
 #include <iostream>
 
-#include "LockFreeSkipList.hpp"
+#include "SkipList.hpp"
 
 int main() {
-    LockFreeSkipList orderBook;
+    SkipList orderBook;
 
     orderBook.insert(1, Order(1, 100.5, 10, OrderType::LIMIT, OrderSide::BUY));
     orderBook.insert(100, Order(1, 100.5, 10, OrderType::LIMIT, OrderSide::BUY));
