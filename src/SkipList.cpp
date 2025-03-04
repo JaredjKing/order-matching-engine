@@ -28,21 +28,21 @@ void SkipList::findPredecessorsAndSuccessors(double price, SkipListNode* pred[],
     }
 }
 
-void SkipList::insert(double price, const Order& order) {
+void SkipList::addOrder(const Order& order) {
     SkipListNode* pred[MAX_LEVEL];
     SkipListNode* succ[MAX_LEVEL];
 
-    findPredecessorsAndSuccessors(price, pred, succ);
+    findPredecessorsAndSuccessors(order.price, pred, succ);
 
     // If price level already exists
-    if (succ[0] && succ[0]->price == price) {
+    if (succ[0] && succ[0]->price == order.price) {
         succ[0]->orders.push(order);
         return;
     }
 
     // Price level does not exist, need to create node
     int newLevel = randomLevel();
-    SkipListNode* newNode = new SkipListNode(price);
+    SkipListNode* newNode = new SkipListNode(order.price);
     newNode->orders.push(order);
 
     // Insert newNode between pred and succ at each level the node exists
@@ -52,7 +52,7 @@ void SkipList::insert(double price, const Order& order) {
     }
 }
 
-bool SkipList::remove(double price) {
+bool SkipList::removeNode(double price) {
     SkipListNode* pred[MAX_LEVEL];
     SkipListNode* succ[MAX_LEVEL];
 
@@ -91,3 +91,5 @@ std::optional<Order> SkipList::getNextOrder(double price) {
     }
     return std::nullopt;
 }
+
+SkipListNode SkipList::getLowestNode() {}

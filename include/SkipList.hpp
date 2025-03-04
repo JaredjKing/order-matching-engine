@@ -19,9 +19,11 @@ class SkipList {
     void findPredecessorsAndSuccessors(double price, SkipListNode* pred[], SkipListNode* succ[]);
 
    public:
+    bool empty;
     SkipList();
-    void insert(double price, const Order& order);
-    bool remove(double price);
+    void addOrder(const Order& order);
+    bool removeNode(double price);
     std::optional<Order> getNextOrder(double price);
     SkipListNode* search(double price);
+    SkipListNode getLowestNode();
 };
