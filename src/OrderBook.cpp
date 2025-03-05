@@ -7,73 +7,80 @@ OrderBook::OrderBook() {
     sell_orders = SkipList();
 }
 
-void OrderBook::addLimitOrder(Order& order) {
+void OrderBook::addLimitOrder(Order&& order) {
     switch (order.side) {
         case (OrderSide::BUY):
             if (!matchLimitBuyOrder(order)) {
-                buy_orders.addOrder(order);
+                buy_orders.addOrder(std::move(order));
             }
-            std::cout << "Unable to add order... \n";
+            break;
         case (OrderSide::SELL):
-            if (!matchLimitSellOrder(order)) {
-                sell_orders.addOrder(order);
-            }
-            std::cout << "Unable to add order... \n";
+            // if (!matchLimitSellOrder(order)) {
+            sell_orders.addOrder(std::move(order));
+            // }
+            break;
     }
 }
 
 bool OrderBook::matchLimitBuyOrder(Order& buy_order) {
-    if (sell_orders.empty) {
+    if (sell_orders.isEmpty()) {
         return false;
     }
 
-    SkipListNode lowest_priced_node = sell_orders.getLowestNode();
-    if (lowest_priced_node.price <= buy_order.price) {
-        while (buy_order.quantity > 0) {
-            Order executing_order = lowest_priced_node.orders.front();
-            if (executing_order.quantity > buy_order.quantity) {
-                executing_order.quantity -= buy_order.quantity;
+    std::shared_ptr<SkipListNode> lowest_priced_node = sell_orders.getLowestNode();
+    if (!lowest_priced_node) {
+        return false;
+    }
 
-                // buy_order is complete..
-                buy_order.quantity = 0;
+    // Check if the lowest-priced order satisfies the buy order
+    if (lowest_priced_node->price > buy_order.price || lowest_priced_node->orders.empty()) {
+        return false;
+    }
 
-                // need to log completed order...
+    while (buy_order.quantity_remaining > 0) {
+        Order& executing_order = lowest_priced_node->orders.front();
 
-                return true;
+        int buy_amount = buy_order.quantity_remaining;
+        int executing_amount = executing_order.quantity_remaining;
 
-            } else if (executing_order.quantity < buy_order.quantity) {
-                buy_order.quantity -= executing_order.quantity;
+        // Execute order fulfillment
+        fulfillOrders(executing_order, buy_order, std::min(buy_amount, executing_amount));
 
-                // executing_order is complete
-                executing_order.quantity = 0;
-                lowest_priced_node.orders.pop();
+        if (executing_amount > buy_amount) {
+            // Buy order is fully filled, but executing order still has remaining quantity
+            return true;
+        }
 
-                // Get next executing order
-                if (lowest_priced_node.orders.size() == 0) {
-                    sell_orders.removeNode(lowest_priced_node.price);
-                    lowest_priced_node = sell_orders.getLowestNode();
-                    if (lowest_priced_node.price > buy_order.price) {
-                        return false;
-                    }
-                }
+        // Remove the fully executed order
+        lowest_priced_node->orders.pop();
 
-                // need to log completed order...
+        // If the price level is empty, remove it and move to the next lowest price
+        if (lowest_priced_node->orders.empty()) {
+            sell_orders.removeNode(lowest_priced_node->price);
 
-            } else {
-                // perfect match, both orders are complete
-                buy_order.quantity == 0;
-                executing_order.quantity == 0;
-                lowest_priced_node.orders.pop();
+            if (sell_orders.isEmpty()) {
+                return false;  // No more sell orders left
+            }
 
-                // remove executing order
-                if (lowest_priced_node.orders.size() == 0) {
-                    sell_orders.removeNode(lowest_priced_node.price);
-                }
+            lowest_priced_node = sell_orders.getLowestNode();
+            if (!lowest_priced_node) {
+                return false;
+            }
 
-                return true;
-
-                // need to log completed order...
+            // If the new lowest price is above the buy order's limit, stop processing
+            if (lowest_priced_node->price > buy_order.price) {
+                return false;
             }
         }
     }
+
+    return true;
+}
+
+void OrderBook::fulfillOrders(Order& orderA, Order& orderB, int quantity) {
+    orderA.quantity_remaining -= quantity;
+    orderB.quantity_remaining -= quantity;
+    orderA.fulfillers.emplace_back(std::array<int, 2>{orderB.id, quantity});
+    orderB.fulfillers.emplace_back(std::array<int, 2>{orderB.id, quantity});
+    return;
 }
