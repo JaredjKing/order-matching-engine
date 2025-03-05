@@ -2,46 +2,49 @@
 
 #include <iostream>
 
-OrderBook::OrderBook() {
-    buy_orders = SkipList();
-    sell_orders = SkipList();
-}
+OrderBook::OrderBook() : buy_orders(), sell_orders() {}
+
+OrderBook::~OrderBook() { submitted_orders.clear(); }
 
 void OrderBook::addLimitOrder(Order&& order) {
-    switch (order.side) {
+    auto order_ptr = std::make_unique<Order>(std::move(order));
+    Order* raw_order_ptr = order_ptr.get();
+    submitted_orders[order_ptr->id] = std::move(order_ptr);
+
+    switch (raw_order_ptr->side) {
         case (OrderSide::BUY):
-            if (!matchLimitBuyOrder(order)) {
-                buy_orders.addOrder(std::move(order));
+            if (!matchLimitBuyOrder(raw_order_ptr)) {
+                buy_orders.addOrder(raw_order_ptr);
             }
             break;
         case (OrderSide::SELL):
-            // if (!matchLimitSellOrder(order)) {
-            sell_orders.addOrder(std::move(order));
+            // if (!matchLimitSellOrder(raw_order_ptr)) {
+            sell_orders.addOrder(raw_order_ptr);
             // }
             break;
     }
 }
 
-bool OrderBook::matchLimitBuyOrder(Order& buy_order) {
+bool OrderBook::matchLimitBuyOrder(Order* buy_order) {
     if (sell_orders.isEmpty()) {
         return false;
     }
 
-    std::shared_ptr<SkipListNode> lowest_priced_node = sell_orders.getLowestNode();
+    SkipListNode* lowest_priced_node = sell_orders.getLowestNode();
     if (!lowest_priced_node) {
         return false;
     }
 
     // Check if the lowest-priced order satisfies the buy order
-    if (lowest_priced_node->price > buy_order.price || lowest_priced_node->orders.empty()) {
+    if (lowest_priced_node->price > buy_order->price || lowest_priced_node->orders.empty()) {
         return false;
     }
 
-    while (buy_order.quantity_remaining > 0) {
-        Order& executing_order = lowest_priced_node->orders.front();
+    while (buy_order->quantity_remaining > 0) {
+        Order* executing_order = lowest_priced_node->orders.front();
 
-        int buy_amount = buy_order.quantity_remaining;
-        int executing_amount = executing_order.quantity_remaining;
+        int buy_amount = buy_order->quantity_remaining;
+        int executing_amount = executing_order->quantity_remaining;
 
         // Execute order fulfillment
         fulfillOrders(executing_order, buy_order, std::min(buy_amount, executing_amount));
@@ -68,7 +71,7 @@ bool OrderBook::matchLimitBuyOrder(Order& buy_order) {
             }
 
             // If the new lowest price is above the buy order's limit, stop processing
-            if (lowest_priced_node->price > buy_order.price) {
+            if (lowest_priced_node->price > buy_order->price) {
                 return false;
             }
         }
@@ -77,10 +80,10 @@ bool OrderBook::matchLimitBuyOrder(Order& buy_order) {
     return true;
 }
 
-void OrderBook::fulfillOrders(Order& orderA, Order& orderB, int quantity) {
-    orderA.quantity_remaining -= quantity;
-    orderB.quantity_remaining -= quantity;
-    orderA.fulfillers.emplace_back(std::array<int, 2>{orderB.id, quantity});
-    orderB.fulfillers.emplace_back(std::array<int, 2>{orderB.id, quantity});
+void OrderBook::fulfillOrders(Order* orderA, Order* orderB, int quantity) {
+    orderA->quantity_remaining -= quantity;
+    orderB->quantity_remaining -= quantity;
+    orderA->fulfillers.emplace_back(std::array<int, 2>{orderB->id, quantity});
+    orderB->fulfillers.emplace_back(std::array<int, 2>{orderB->id, quantity});
     return;
 }

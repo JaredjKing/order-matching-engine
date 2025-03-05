@@ -7,9 +7,9 @@
 struct SkipListNode {
     static constexpr int MAX_LEVEL = 16;
     double price;
-    std::queue<Order> orders;
-    std::array<std::shared_ptr<SkipListNode>, MAX_LEVEL> next;
-    std::array<std::shared_ptr<SkipListNode>, MAX_LEVEL> prev;
+    std::queue<Order*> orders;
+    std::array<SkipListNode*, MAX_LEVEL> next;
+    std::array<SkipListNode*, MAX_LEVEL> prev;
 
     SkipListNode(double price) : price(price) {
         next.fill(nullptr);  // Initialize all levels to nullptr

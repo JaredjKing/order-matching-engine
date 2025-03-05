@@ -3,8 +3,8 @@
 #include <iostream>
 
 SkipList::SkipList() {
-    head = std::make_shared<SkipListNode>(-1);
-    tail = std::make_shared<SkipListNode>(-1);
+    head = new SkipListNode(-1);
+    tail = new SkipListNode(-1);
     for (int i = 0; i < MAX_LEVEL; i++) {
         head->next[i] = tail;
         tail->prev[i] = head;
@@ -19,8 +19,20 @@ int SkipList::randomLevel() {
     return level;
 }
 
-void SkipList::findPredecessorsAndSuccessors(double price, std::shared_ptr<SkipListNode> pred[],
-                                             std::shared_ptr<SkipListNode> succ[]) {
+SkipList::~SkipList() {
+    SkipListNode* current = head->next[0];
+
+    while (current != tail) {
+        SkipListNode* nextNode = current->next[0];
+        delete current;
+        current = nextNode;
+    }
+    delete tail;
+    delete head;
+}
+
+void SkipList::findPredecessorsAndSuccessors(double price, SkipListNode* pred[],
+                                             SkipListNode* succ[]) {
     auto curr = head;
 
     for (int level = MAX_LEVEL - 1; level >= 0; level--) {
@@ -34,22 +46,22 @@ void SkipList::findPredecessorsAndSuccessors(double price, std::shared_ptr<SkipL
     }
 }
 
-void SkipList::addOrder(const Order&& order) {
-    std::shared_ptr<SkipListNode> pred[MAX_LEVEL];
-    std::shared_ptr<SkipListNode> succ[MAX_LEVEL];
+void SkipList::addOrder(Order* order) {
+    SkipListNode* pred[MAX_LEVEL];
+    SkipListNode* succ[MAX_LEVEL];
 
-    findPredecessorsAndSuccessors(order.price, pred, succ);
+    findPredecessorsAndSuccessors(order->price, pred, succ);
 
     // If price level already exists
-    if (succ[0] && succ[0]->price == order.price) {
-        succ[0]->orders.push(std::move(order));
+    if (succ[0] && succ[0]->price == order->price) {
+        succ[0]->orders.push(order);
         return;
     }
 
     // Price level does not exist, need to create node
     int newLevel = randomLevel();
-    auto newNode = std::make_shared<SkipListNode>(order.price);
-    newNode->orders.push(std::move(order));
+    auto newNode = new SkipListNode(order->price);
+    newNode->orders.push(order);
 
     // Insert newNode between pred and succ at each level the node exists
     for (int i = 0; i < newLevel; i++) {
@@ -61,15 +73,15 @@ void SkipList::addOrder(const Order&& order) {
 }
 
 bool SkipList::removeNode(double price) {
-    std::shared_ptr<SkipListNode> pred[MAX_LEVEL] = {nullptr};
-    std::shared_ptr<SkipListNode> succ[MAX_LEVEL] = {nullptr};
+    SkipListNode* pred[MAX_LEVEL] = {nullptr};
+    SkipListNode* succ[MAX_LEVEL] = {nullptr};
 
     findPredecessorsAndSuccessors(price, pred, succ);
 
     if (!succ[0] || succ[0]->price != price) return false;  // Price not found
 
     // Store the node to be deleted
-    std::shared_ptr<SkipListNode> target = succ[0];
+    SkipListNode* target = succ[0];
 
     // Unlink node from list at each level
     for (int i = 0; i < MAX_LEVEL; i++) {
@@ -81,10 +93,11 @@ bool SkipList::removeNode(double price) {
         }
     }
 
+    delete target;
     return true;
 }
 
-std::shared_ptr<SkipListNode> SkipList::search(double price) {
+SkipListNode* SkipList::search(double price) {
     auto curr = head;
 
     for (int level = MAX_LEVEL - 1; level >= 0; level--) {
@@ -97,21 +110,11 @@ std::shared_ptr<SkipListNode> SkipList::search(double price) {
     return (curr != tail && curr->price == price) ? curr : nullptr;
 }
 
-Order SkipList::getNextOrder(double price) {
-    auto node = search(price);
-    if (node && !node->orders.empty()) {
-        Order nextOrder = node->orders.front();
-        node->orders.pop();
-        return nextOrder;
-    }
-    throw std::runtime_error("No order found at the given price");
-}
-
-std::shared_ptr<SkipListNode> SkipList::getLowestNode() {
+SkipListNode* SkipList::getLowestNode() {
     return (head->next[0] != tail) ? head->next[0] : nullptr;
 }
 
-std::shared_ptr<SkipListNode> SkipList::getHighestNode() {
+SkipListNode* SkipList::getHighestNode() {
     return (tail->prev[0] != head) ? tail->prev[0] : nullptr;
 }
 

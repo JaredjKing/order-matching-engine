@@ -17,8 +17,10 @@ int main() {
 
     order_book.addLimitOrder(Order(6, 100, 150, OrderType::LIMIT, OrderSide::BUY));
     order_book.printSellList();
-    order_book.addLimitOrder(Order(6, 100, 50, OrderType::LIMIT, OrderSide::BUY));
+    order_book.addLimitOrder(Order(7, 100, 50, OrderType::LIMIT, OrderSide::BUY));
     order_book.printSellList();
+
+    order_book.printSubmittedOrders();
 
     return 0;
 }
