@@ -18,9 +18,9 @@ void OrderBook::addLimitOrder(Order&& order) {
             }
             break;
         case (OrderSide::SELL):
-            // if (!matchLimitSellOrder(raw_order_ptr)) {
-            sell_orders.addOrder(raw_order_ptr);
-            // }
+            if (!matchLimitSellOrder(raw_order_ptr)) {
+                sell_orders.addOrder(raw_order_ptr);
+            }
             break;
     }
 }
@@ -86,4 +86,54 @@ void OrderBook::fulfillOrders(Order* orderA, Order* orderB, int quantity) {
     orderA->fulfillers.emplace_back(std::array<int, 2>{orderB->id, quantity});
     orderB->fulfillers.emplace_back(std::array<int, 2>{orderB->id, quantity});
     return;
+}
+
+bool OrderBook::matchLimitSellOrder(Order* sell_order) {
+    if (buy_orders.isEmpty()) {
+        return false;
+    }
+
+    SkipListNode* highest_priced_node = buy_orders.getHighestNode();
+    if (!highest_priced_node) {
+        return false;
+    }
+
+    // Check if the highest-priced buy order satisfies the sell order
+    if (highest_priced_node->price < sell_order->price || highest_priced_node->orders.empty()) {
+        return false;
+    }
+
+    while (sell_order->quantity_remaining > 0) {
+        Order* executing_order = highest_priced_node->orders.front();
+
+        int sell_amount = sell_order->quantity_remaining;
+        int executing_amount = executing_order->quantity_remaining;
+
+        // Execute order fulfillment
+        fulfillOrders(executing_order, sell_order, std::min(sell_amount, executing_amount));
+
+        if (executing_amount > sell_amount) {
+            // Sell order is fully filled, but executing buy order still has remaining quantity
+            return true;
+        }
+
+        // Remove the fully executed buy order
+        highest_priced_node->orders.pop();
+
+        // If the price level is empty, remove it and move to the next highest price level
+        if (highest_priced_node->orders.empty()) {
+            buy_orders.removeNode(highest_priced_node->price);
+
+            if (buy_orders.isEmpty()) {
+                return false;
+            }
+
+            highest_priced_node = buy_orders.getHighestNode();
+            if (!highest_priced_node || highest_priced_node->price < sell_order->price) {
+                return false;
+            }
+        }
+    }
+
+    return true;
 }

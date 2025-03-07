@@ -11,14 +11,6 @@ SkipList::SkipList() {
     }
 }
 
-int SkipList::randomLevel() {
-    int level = 1;
-    while (distribution(rng) < 0.5 && level < MAX_LEVEL) {
-        level++;
-    }
-    return level;
-}
-
 SkipList::~SkipList() {
     SkipListNode* current = head->next[0];
 
@@ -29,6 +21,14 @@ SkipList::~SkipList() {
     }
     delete tail;
     delete head;
+}
+
+int SkipList::randomLevel() {
+    int level = 1;
+    while (distribution(rng) < 0.5 && level < MAX_LEVEL) {
+        level++;
+    }
+    return level;
 }
 
 void SkipList::findPredecessorsAndSuccessors(double price, SkipListNode* pred[],

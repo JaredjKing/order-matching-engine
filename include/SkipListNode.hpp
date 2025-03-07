@@ -5,7 +5,7 @@
 
 #include "Order.hpp"
 struct SkipListNode {
-    static constexpr int MAX_LEVEL = 16;
+    static constexpr int MAX_LEVEL = 128;
     double price;
     std::queue<Order*> orders;
     std::array<SkipListNode*, MAX_LEVEL> next;
