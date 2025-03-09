@@ -83,8 +83,10 @@ bool OrderBook::matchLimitBuyOrder(Order* buy_order) {
 void OrderBook::fulfillOrders(Order* orderA, Order* orderB, int quantity) {
     orderA->quantity_remaining -= quantity;
     orderB->quantity_remaining -= quantity;
-    orderA->fulfillers.emplace_back(std::array<int, 2>{orderB->id, quantity});
-    orderB->fulfillers.emplace_back(std::array<int, 2>{orderB->id, quantity});
+    order_completions[orderA->id].push_back(
+        std::array<double, 3>{(double)orderB->id, (double)quantity, orderA->price});
+    order_completions[orderA->id].push_back(
+        std::array<double, 3>{(double)orderB->id, (double)quantity, orderA->price});
     return;
 }
 

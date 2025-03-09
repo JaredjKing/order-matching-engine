@@ -42,9 +42,6 @@ class SkipList {
                 std::cout << "  Order ID: " << order.id
                           << " | Quantity Remaining: " << order.quantity_remaining
                           << " | Fulfillers: ";
-                for (const auto& fulfiller : order.fulfillers) {
-                    std::cout << "[Order ID: " << fulfiller[0] << ", Qty: " << fulfiller[1] << "] ";
-                }
                 std::cout << "\n";
             }
             current = current->next[0];

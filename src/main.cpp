@@ -68,7 +68,7 @@ void processOrdersFromCSV(const std::string& filename, OrderBook& orderBook) {
 
 int main() {
     OrderBook orderBook;
-    std::string filename = "aapl_limit_orders.csv";  // Ensure this file is present
+    std::string filename = "../aapl_limit_orders.csv";  // Ensure this file is present
 
     std::cout << "Processing orders in real-time from CSV...\n";
     processOrdersFromCSV(filename, orderBook);
