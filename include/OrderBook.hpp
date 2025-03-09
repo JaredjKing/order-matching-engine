@@ -10,6 +10,7 @@ class OrderBook {
     SkipList buy_orders;
     SkipList sell_orders;
     std::unordered_map<int, std::unique_ptr<Order>> submitted_orders;
+    std::unordered_map<int, std::vector<std::array<double, 3>>> order_completions;
     void fulfillOrders(Order* orderA, Order* orderB, int quantity);
 
    public:
@@ -49,16 +50,6 @@ class OrderBook {
 
             if (order->quantity_remaining == 0) {
                 std::cout << " | **FILLED**";
-            }
-
-            if (!order->fulfillers.empty()) {
-                std::cout << "  Fulfilled by: [";
-                for (const auto& fulfiller : order->fulfillers) {
-                    std::cout << "[Order ID: " << fulfiller[0] << ", Qty: " << fulfiller[1] << "]";
-                }
-                std::cout << "]\n";
-            } else {
-                std::cout << "\n";
             }
         }
 
