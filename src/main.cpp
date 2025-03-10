@@ -60,9 +60,9 @@ void processOrdersFromCSV(const std::string& filename, OrderBook& orderBook) {
     double total_time_ms =
         std::chrono::duration<double, std::milli>(total_order_processing_time).count();
 
-    std::cout << "✅ Finished processing all orders from " << filename << std::endl;
-    std::cout << "⏱️ Total order processing time: " << total_time_ms << " ms" << std::endl;
-    std::cout << "⏱️ Average time per order: " << (total_time_ms / order_count) << " ms"
+    std::cout << "Finished processing all orders from " << filename << std::endl;
+    std::cout << "Total order processing time: " << total_time_ms << " ms" << std::endl;
+    std::cout << "Average time per order: " << (total_time_ms / order_count) << " ms"
               << std::endl;
 }
 
