@@ -4,22 +4,23 @@
 
 OrderBook::OrderBook() : buy_orders(), sell_orders() {}
 
-OrderBook::~OrderBook() { submitted_orders.clear(); }
+void OrderBook::addLimitOrder(int id, double price, uint32_t quantity, OrderType type,
+                              OrderSide side) {
+    Order* order = orderPool.allocate(id, price, quantity, type, side);
+    if (!order) {
+        std::cerr << "Order pool exhausted! Consider resetting the batch.\n";
+        return;
+    }
 
-void OrderBook::addLimitOrder(Order&& order) {
-    auto order_ptr = std::make_unique<Order>(std::move(order));
-    Order* raw_order_ptr = order_ptr.get();
-    submitted_orders[order_ptr->id] = std::move(order_ptr);
-
-    switch (raw_order_ptr->side) {
-        case (OrderSide::BUY):
-            if (!matchLimitBuyOrder(raw_order_ptr)) {
-                buy_orders.addOrder(raw_order_ptr);
+    switch (order->side) {
+        case OrderSide::BUY:
+            if (!matchLimitBuyOrder(order)) {
+                buy_orders.addOrder(order);
             }
             break;
-        case (OrderSide::SELL):
-            if (!matchLimitSellOrder(raw_order_ptr)) {
-                sell_orders.addOrder(raw_order_ptr);
+        case OrderSide::SELL:
+            if (!matchLimitSellOrder(order)) {
+                sell_orders.addOrder(order);
             }
             break;
     }

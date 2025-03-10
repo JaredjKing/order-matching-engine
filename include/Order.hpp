@@ -27,6 +27,16 @@ struct Order {
           type(type),
           side(side) {}
 
+    Order()
+        : timestamp(0),
+          price(0.0),
+          quantity_requested(0),
+          quantity_remaining(0),
+          id(0),
+          type(OrderType::LIMIT),
+          side(OrderSide::BUY),
+          _padding(0) {}
+
     inline bool isMarket() const { return type == OrderType::MARKET; }
     inline bool isLimit() const { return type == OrderType::LIMIT; }
     inline bool isStop() const { return type == OrderType::STOP; }
