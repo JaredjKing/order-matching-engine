@@ -5,6 +5,11 @@
 
 #include "SkipList.hpp"
 
+// TODO:
+// Add order ID generation
+// Add market buy and sell orders
+// Optimize...
+
 class OrderBook {
    private:
     SkipList buy_orders;

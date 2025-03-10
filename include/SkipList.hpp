@@ -8,8 +8,6 @@
 
 #include "SkipListNode.hpp"
 
-static constexpr int MAX_LEVEL = 16;
-
 class SkipList {
    private:
     SkipListNode* head;
