@@ -4,7 +4,12 @@
 #include <sstream>
 #include <string>
 
-#include "OrderBook.hpp"  // Include your OrderBook implementation
+#include "MarketEvents.hpp"
+#include "OrderBook.hpp"
+#include "TcpServer.hpp"
+#include "UdpPublisher.hpp"
+
+OrderBook* g_orderbook_ptr = nullptr;
 
 void processOrdersFromCSV(const std::string& filename, OrderBook& orderBook) {
     std::ifstream file(filename);
@@ -62,22 +67,33 @@ void processOrdersFromCSV(const std::string& filename, OrderBook& orderBook) {
 
     std::cout << "Finished processing all orders from " << filename << std::endl;
     std::cout << "Total order processing time: " << total_time_ms << " ms" << std::endl;
-    std::cout << "Average time per order: " << (total_time_ms / order_count) << " ms"
-              << std::endl;
+    std::cout << "Average time per order: " << (total_time_ms / order_count) << " ms" << std::endl;
 }
 
-int main() {
+int main(int argc, char** argv) {
     OrderBook orderBook;
-    std::string filename = "../aapl_limit_orders.csv";  // Ensure this file is present
+    g_orderbook_ptr = &orderBook;
 
+    if (argc > 1 && std::string(argv[1]) == "--net") {
+        UdpPublisher md("239.0.0.1", 30000, /*ttl*/ 1);
+
+        // Wire engine → UDP multicast
+        MarketEvents::onTrade = [&md](const TradeEvent& t) { md.publishTrade(t); };
+        MarketEvents::onBookDelta = [&md](const BookDelta& d) { md.publishBook(d); };
+
+        TcpServer srv(orderBook, /*port*/ 5000);
+        srv.start();
+
+        std::cout << "TCP order-entry on :5000, UDP MD to 239.0.0.1:30000\n";
+        std::cout << "Try:  NEW|id=1|sym=SYM|side=B|px=100|qty=50\\n\n";
+        // simple run loop
+        for (;;) std::this_thread::sleep_for(std::chrono::seconds(1));
+        // srv.stop(); // unreachable in this simple demo
+        return 0;
+    }
+
+    // default: CSV mode (kept exactly as you had it)
     std::cout << "Processing orders in real-time from CSV...\n";
-    processOrdersFromCSV(filename, orderBook);
-
-    // Final summary of order book
-    // std::cout << "\n========= FINAL ORDER BOOK =========\n";
-    // orderBook.printSubmittedOrders();
-    // orderBook.printBuyList();
-    // orderBook.printSellList();
-
+    processOrdersFromCSV("../list2.csv", orderBook);
     return 0;
 }

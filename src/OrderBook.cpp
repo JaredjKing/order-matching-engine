@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "MarketEvents.hpp"
+
 OrderBook::OrderBook() : buy_orders(), sell_orders() {}
 
 OrderBook::~OrderBook() { submitted_orders.clear(); }
@@ -59,8 +61,13 @@ bool OrderBook::matchLimitBuyOrder(Order* buy_order) {
 
         // If the price level is empty, remove it and move to the next lowest price
         if (lowest_priced_node->orders.empty()) {
-            sell_orders.removeNode(lowest_priced_node->price);
+            double px_removed = lowest_priced_node->price;
+            sell_orders.removeNode(px_removed);
 
+            if (MarketEvents::onBookDelta) {
+                MarketEvents::onBookDelta(
+                    BookDelta{/*symbol=*/"SYM", /*side=*/'S', /*px=*/px_removed, /*qty=*/0});
+            }
             if (sell_orders.isEmpty()) {
                 return false;  // No more sell orders left
             }
@@ -85,8 +92,15 @@ void OrderBook::fulfillOrders(Order* orderA, Order* orderB, int quantity) {
     orderB->quantity_remaining -= quantity;
     order_completions[orderA->id].push_back(
         std::array<double, 3>{(double)orderB->id, (double)quantity, orderA->price});
-    order_completions[orderA->id].push_back(
-        std::array<double, 3>{(double)orderB->id, (double)quantity, orderA->price});
+    order_completions[orderB->id].push_back(
+        std::array<double, 3>{(double)orderA->id, (double)quantity, orderA->price});
+
+    // PUBLISH TRADE (maker = resting orderA; taker = aggressor orderB or vice-versa)
+    if (MarketEvents::onTrade) {
+        MarketEvents::onTrade(TradeEvent{/*symbol=*/"SYM", /*makerId=*/orderA->id,
+                                         /*takerId=*/orderB->id,
+                                         /*qty=*/quantity, /*px=*/orderA->price});
+    }
     return;
 }
 
@@ -124,7 +138,13 @@ bool OrderBook::matchLimitSellOrder(Order* sell_order) {
 
         // If the price level is empty, remove it and move to the next highest price level
         if (highest_priced_node->orders.empty()) {
-            buy_orders.removeNode(highest_priced_node->price);
+            double px_removed = highest_priced_node->price;
+            buy_orders.removeNode(px_removed);
+
+            if (MarketEvents::onBookDelta) {
+                MarketEvents::onBookDelta(
+                    BookDelta{/*symbol=*/"SYM", /*side=*/'B', /*px=*/px_removed, /*qty=*/0});
+            }
 
             if (buy_orders.isEmpty()) {
                 return false;
